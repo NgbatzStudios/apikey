@@ -31,9 +31,11 @@ jobs:
         run: echo "$TUNNEL_URL" > apilink
 
       - name: Commit and push
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add apilink
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update apilink from LocalXpose"
-          git push
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update apilink from LocalXpose [skip ci]"
+          git push https://x-access-token:${GH_TOKEN}@github.com/NgbatzStudios/apikey.git HEAD:main
