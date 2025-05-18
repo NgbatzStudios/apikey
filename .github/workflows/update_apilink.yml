@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - apilink           # ignore commits that only change apilink
+      - apilink
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
@@ -16,14 +16,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       - name: Get tunnel info from LocalXpose
         id: get_tunnel
         run: |
           response=$(curl -s -H "Authorization: Bearer ${{ secrets.LOCX_API_TOKEN }}" https://api.localxpose.io/api/tunnels)
           echo "$response" > response.json
-          
-          # Parse the tunnel URL using jq
           URL=$(echo "$response" | jq -r '.tunnels[0].url // "offline"')
           echo "TUNNEL_URL=$URL" >> $GITHUB_ENV
 
