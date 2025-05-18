@@ -1,8 +1,13 @@
 name: Update apilink from loclx
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - apilink           # ignore commits that only change apilink
   schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
