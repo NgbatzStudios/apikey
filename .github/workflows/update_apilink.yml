@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - apilink
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:
 
 jobs:
@@ -22,33 +22,31 @@ jobs:
       - name: Get tunnel info from LocalXpose
         id: get_tunnel
         run: |
+          echo "Fetching tunnel info from LocalXpose API..."
           response=$(curl -s -H "Authorization: Bearer ${{ secrets.LOCX_API_TOKEN }}" https://api.localxpose.io/api/tunnels)
+          echo "Raw API response:"
+          echo "$response"
           echo "$response" > response.json
+          
+          tunnels_count=$(echo "$response" | jq '.tunnels | length')
+          echo "Number of tunnels found: $tunnels_count"
+
           URL=$(echo "$response" | jq -r '.tunnels[0].url // "offline"')
+          echo "Parsed tunnel URL: $URL"
           echo "TUNNEL_URL=$URL" >> $GITHUB_ENV
 
       - name: Write apilink file
         run: |
-          # Write without newline to avoid false no-change detection
-          echo -n "$TUNNEL_URL" > apilink
+          echo "Writing tunnel URL to apilink file..."
+          echo "$TUNNEL_URL"
+          echo "$TUNNEL_URL" > apilink
 
-      - name: Debug apilink content and git status
-        run: |
-          echo "apilink content:"
-          cat apilink
-          git status
-          git diff apilink
-
-      - name: Commit and push if changed
+      - name: Commit and push
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add apilink
-          if git diff --cached --quiet; then
-            echo "No changes detected, skipping commit."
-          else
-            git commit -m "Update apilink from LocalXpose [skip ci]"
-            git push https://x-access-token:${GH_TOKEN}@github.com/NgbatzStudios/apikey.git HEAD:main
-          fi
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update apilink from LocalXpose [skip ci]"
+          git push https://x-access-token:${GH_TOKEN}@github.com/NgbatzStudios/apikey.git HEAD:main
