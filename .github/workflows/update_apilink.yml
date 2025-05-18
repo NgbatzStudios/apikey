@@ -28,14 +28,27 @@ jobs:
           echo "TUNNEL_URL=$URL" >> $GITHUB_ENV
 
       - name: Write apilink file
-        run: echo "$TUNNEL_URL" > apilink
+        run: |
+          # Write without newline to avoid false no-change detection
+          echo -n "$TUNNEL_URL" > apilink
 
-      - name: Commit and push
+      - name: Debug apilink content and git status
+        run: |
+          echo "apilink content:"
+          cat apilink
+          git status
+          git diff apilink
+
+      - name: Commit and push if changed
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add apilink
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update apilink from LocalXpose [skip ci]"
-          git push https://x-access-token:${GH_TOKEN}@github.com/NgbatzStudios/apikey.git HEAD:main
+          if git diff --cached --quiet; then
+            echo "No changes detected, skipping commit."
+          else
+            git commit -m "Update apilink from LocalXpose [skip ci]"
+            git push https://x-access-token:${GH_TOKEN}@github.com/NgbatzStudios/apikey.git HEAD:main
+          fi
